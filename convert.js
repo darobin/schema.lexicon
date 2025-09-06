@@ -1,6 +1,7 @@
 
 import { readFile, writeFile } from 'node:fs/promises';
 import chalk from 'chalk';
+import { Lexicons } from '@atproto/lexicon'
 
 const data = JSON.parse(await readFile(rel('schemaorg-all-https.20250815.json')));
 const types = {};
@@ -189,12 +190,11 @@ Object
   })
 ;
 
-// XXX
-// - analyse all properties
-// - analyse all classes
-// - for each class, generate it with properties
-//  - take inheritance into account
 await writeFile(rel('schema.lexicon.json'), JSON.stringify(lexicon, null, 2));
+
+// don't do this before saving because it modifies the schema
+const lex = new Lexicons();
+lex.add(lexicon); // at least it builds
 
 // report();
 

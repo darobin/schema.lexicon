@@ -132,6 +132,7 @@ Object
   .forEach(id => {
     const cl = classes[id];
     const label = lang2string(cl['rdfs:label'])
+    if (skip.has(`schema:${label}`)) return;
     lexicon.defs[label] = {
       type: 'object',
       description: lang2string(cl['rdfs:comment']),
@@ -160,7 +161,6 @@ Object
         const prop = properties[k];
         const propName = lang2string(prop['rdfs:label'])
         const propDef = {
-          type: 'XXX',
           description: lang2string(prop['rdfs:comment']),
         };
         // If it's an array, we have a union. But Lexicon unions can only be
@@ -169,13 +169,13 @@ Object
         // Whenever we have a scalar type in a union, we use a class matching
         // the DataType and give it a `@value` property of the right type.
         // That is correct in JSON-LD, even if it's pretty ugly.
-        if (item['schema:rangeIncludes']) {
-          if (Array.isArray(item['schema:rangeIncludes'])) {
+        if (prop['schema:rangeIncludes']) {
+          if (Array.isArray(prop['schema:rangeIncludes'])) {
             propDef.type = 'union';
-            propDef.refs = item['schema:rangeIncludes'].map(({ '@id': id }) => `#${id.replace(/^\w+:/, '')}`);
+            propDef.refs = prop['schema:rangeIncludes'].map(({ '@id': id }) => `#${id.replace(/^\w+:/, '')}`);
           }
           else {
-            const label = item['schema:rangeIncludes'].replace(/^\w+:/, '');
+            const label = prop['schema:rangeIncludes']['@id'].replace(/^\w+:/, '');
             if (dataTypes[label]) Object.assign(propDef, dataTypes[label]);
             else {
               propDef.type = 'ref';
@@ -199,7 +199,7 @@ await writeFile(rel('schema.lexicon.json'), JSON.stringify(lexicon, null, 2));
 // report();
 
 // report
-function report () {
+export function report () {
   sortedEntries(types).forEach(type => {
     console.log(chalk.bold[supportedTypes[type] ? 'green' : 'red'](`${type} (${types[type]})`));
     sortedEntries(typeProps[type]).forEach(prop => {
@@ -222,7 +222,7 @@ function sortedEntries (obj) {
       if (a[1] < b[1]) return 1;
       return 0;
     })
-    .map(([k, v]) => k)
+    .map(([k]) => k)
   ;
 }
 
